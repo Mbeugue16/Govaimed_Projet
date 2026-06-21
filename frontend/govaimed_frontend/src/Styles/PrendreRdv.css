@@ -1,0 +1,78 @@
+.rdv-container{
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:#f1f5f9;
+}
+
+.rdv-card{
+  background:white;
+  padding:35px;
+  border-radius:16px;
+  width:100%;
+  max-width:450px;
+  box-shadow:0 10px 25px rgba(0,0,0,0.08);
+}
+
+.rdv-card h2{
+  text-align:center;
+  margin-bottom:25px;
+}
+
+.rdv-form{
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+}
+
+.form-group{
+  display:flex;
+  flex-direction:column;
+}
+
+.form-group label{
+  margin-bottom:6px;
+  font-weight:500;
+}
+
+.form-group input,
+.form-group select{
+  padding:12px;
+  border-radius:10px;
+  border:1px solid #d1d5db;
+  font-size:15px;
+}
+
+button{
+  margin-top:10px;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  font-weight:600;
+  font-size:16px;
+  background:linear-gradient(135deg,#10b981,#059669);
+  color:white;
+  cursor:pointer;
+}
+
+button:hover{
+  opacity:0.9;
+}
+
+button:disabled{
+  opacity:0.6;
+}
+
+.message{
+  text-align:center;
+  font-weight:600;
+}
+
+.message.success{
+  color:#059669;
+}
+
+.message.error{
+  color:#dc2626;
+}

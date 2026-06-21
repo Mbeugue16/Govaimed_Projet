@@ -1,0 +1,149 @@
+.PatientDashboard {
+  min-height: 100vh;
+  background-color: #e6f4f1;
+  padding: 60px 20px;
+  font-family: "Inter", "Segoe UI", sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.PatientDashboard p {
+  font-size: 1.2rem;
+  color: #475569;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.PatientDashboard h1 {
+  font-size: 2.4rem;
+  color: #0f172a;
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+/* ===================== Cartes ===================== */
+.dashboard-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 25px;
+  width: 100%;
+  max-width: 900px;
+  margin-bottom: 50px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  padding: 30px 20px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+  color: #047857;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1.2rem;
+  gap: 12px;
+  transition: all 0.3s ease;
+}
+
+.card .icon {
+  font-size: 2.5rem;
+}
+
+.card.logout {
+  background: linear-gradient(135deg, #fee2e2, #fca5a5);
+  color: #b91c1c;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 25px rgba(16, 185, 129, 0.4);
+}
+
+.card.logout:hover {
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+  color: white;
+}
+
+/* ===================== Liste RDV ===================== */
+.patient-rdv {
+  width: 100%;
+  max-width: 900px;
+  background-color: #ffffff;
+  padding: 30px;
+  border-radius: 20px;
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.08);
+}
+
+.patient-rdv h2 {
+  font-size: 1.6rem;
+  margin-bottom: 20px;
+  color: #0f172a;
+}
+
+.patient-rdv ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.patient-rdv li {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 10px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.patient-rdv li:last-child {
+  border-bottom: none;
+}
+
+.date {
+  font-weight: 600;
+  color: #0f172a;
+  width: 180px;
+}
+
+.medecin {
+  font-weight: 500;
+  color: #475569;
+  flex: 1;
+  text-align: right;
+}
+
+.statut {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.statut.EN_ATTENTE {
+  background-color: #fff7ed;
+  color: #f97316;
+}
+
+.statut.EN_COURS {
+  background-color: #ecfdf5;
+  color: #10b981;
+}
+
+.statut.TERMINE {
+  background-color: #f1f5f9;
+  color: #64748b;
+}
+
+.statut.ANNULE {
+  background-color: #fee2e2;
+  color: #ef4444;
+}
+
+.empty {
+  text-align: center;
+  color: #64748b;
+  font-style: italic;
+}

@@ -1,0 +1,82 @@
+/* =======================
+   Container principal
+======================= */
+.MesDossiers {
+  padding: 50px 20px 30px 20px; /* plus d'espace en haut */
+  background-color: #f9fafb;
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Titre */
+.MesDossiers h2 {
+  margin-bottom: 24px;
+  color: #1f2937;
+  font-size: 1.75rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Conteneur scrollable pour le tableau */
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+/* Tableau */
+.MesDossiers table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+/* En-tête */
+.MesDossiers thead th {
+  background-color: #1f2937;
+  color: #ffffff;
+  padding: 12px;
+  text-align: left;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+/* Lignes du corps */
+.MesDossiers tbody tr {
+  background-color: white;
+  border-bottom: 1px solid #e5e7eb;
+  transition: background-color 0.15s ease;
+}
+
+.MesDossiers tbody tr:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+.MesDossiers tbody tr:hover {
+  background-color: #f0fdf4;
+}
+
+/* Cellules */
+.MesDossiers td {
+  padding: 12px;
+  color: #4b5563;
+  font-size: 0.875rem;
+}
+
+/* Messages de chargement / erreur / vide */
+.loading-msg,
+.error-msg,
+.empty-msg {
+  font-size: 1rem;
+  color: #374151;
+  margin-top: 30px;
+  text-align: center;
+}
+
+.error-msg {
+  color: red;
+}

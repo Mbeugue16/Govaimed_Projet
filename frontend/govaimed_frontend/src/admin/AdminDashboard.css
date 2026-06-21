@@ -1,0 +1,110 @@
+/* AdminDashboard.css */
+
+.admin-dashboard {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f9f9f9;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.admin-dashboard h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.admin-dashboard table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-dashboard th,
+.admin-dashboard td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.admin-dashboard th {
+  background-color: #4CAF50;
+  color: white;
+  text-transform: uppercase;
+  font-size: 14px;
+}
+
+.admin-dashboard tr:hover {
+  background-color: #f1f1f1;
+}
+
+.admin-dashboard input,
+.admin-dashboard select {
+  padding: 6px 8px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.admin-dashboard button {
+  padding: 6px 12px;
+  margin-right: 6px;
+  font-size: 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.admin-dashboard button:hover {
+  opacity: 0.85;
+}
+
+.admin-dashboard button:first-of-type {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.admin-dashboard button:last-of-type {
+  background-color: #f44336;
+  color: white;
+}
+
+/* Responsive pour mobile */
+@media screen and (max-width: 768px) {
+  .admin-dashboard table,
+  .admin-dashboard thead,
+  .admin-dashboard tbody,
+  .admin-dashboard th,
+  .admin-dashboard td,
+  .admin-dashboard tr {
+    display: block;
+  }
+
+  .admin-dashboard tr {
+    margin-bottom: 15px;
+    border-bottom: 2px solid #ddd;
+  }
+
+  .admin-dashboard td {
+    text-align: right;
+    padding-left: 50%;
+    position: relative;
+  }
+
+  .admin-dashboard td::before {
+    content: attr(data-label);
+    position: absolute;
+    left: 15px;
+    width: calc(50% - 30px);
+    font-weight: bold;
+    text-align: left;
+  }
+
+  .admin-dashboard th {
+    display: none;
+  }
+}

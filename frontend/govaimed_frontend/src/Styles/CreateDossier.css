@@ -1,0 +1,88 @@
+/* Container principal */
+.CreateDossier {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 30px 20px;
+  background-color: #f0fdf4;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Titre */
+.CreateDossier h2 {
+  text-align: center;
+  font-size: 1.8rem;
+  color: #111827;
+  margin-bottom: 30px;
+}
+
+/* Sous-titre */
+.CreateDossier h4 {
+  margin-top: 20px;
+  color: #374151;
+  font-size: 1.1rem;
+}
+
+/* Labels */
+.CreateDossier label {
+  display: block;
+  margin-top: 15px;
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: #374151;
+}
+
+/* Inputs, selects et textarea */
+.CreateDossier input,
+.CreateDossier select,
+.CreateDossier textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 1rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* Focus */
+.CreateDossier input:focus,
+.CreateDossier select:focus,
+.CreateDossier textarea:focus {
+  outline: none;
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+
+/* Textarea */
+.CreateDossier textarea {
+  resize: vertical;
+}
+
+/* Bouton */
+.CreateDossier button {
+  margin-top: 25px;
+  width: 100%;
+  padding: 12px;
+  background-color: #10b981;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.2s;
+}
+
+/* Hover bouton */
+.CreateDossier button:hover {
+  background-color: #059669;
+  transform: translateY(-2px);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .CreateDossier {
+    padding: 20px 15px;
+  }
+}
