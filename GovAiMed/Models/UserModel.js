@@ -34,6 +34,13 @@ const assistantSchema = new mongoose.Schema({
   serviceId: { type: mongoose.Schema.Types.ObjectId, ref: 'Service' }
 }, { _id: false });
 
+//Medecin
+const medecinSchema = new mongoose.Schema({
+specialite: { type: String, required: true, trim: true },
+telephone: { type: String, required: true, trim: true },
+adresseCabinet: { type: String, required: true, trim: true }
+}, { _id: false });
+
 
   // Schéma principal User
 
@@ -60,7 +67,7 @@ const userSchema = new mongoose.Schema({
 resetPasswordExpire: Date,
 
   // patientDetails: { type: patientSchema, required: function () { return this.role === 'Patient'; } },
-  medecinDetails: { type: mongoose.Schema.Types.Mixed }, // le modèle Medecin est séparé
+  medecinDetails: {  type: medecinSchema, required: function () { return this.role === 'Medecin'; }}, // le modèle Medecin est séparé
   pharmacienDetails: { type: pharmacienSchema, required: function () { return this.role === 'Pharmacien'; } },
   assistantDetails: { type: assistantSchema, required: function () { return this.role === 'Assistant'; } },
   adminDetails: { type: adminSchema, required: function () { return this.role === 'Admin' || this.role === 'SuperAdmin'; } },

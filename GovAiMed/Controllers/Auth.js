@@ -1,3 +1,4 @@
+// controllers/authController.js
 const User = require("../Models/UserModel");
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
@@ -8,56 +9,127 @@ const generateToken = (user) => {
   return jwt.sign(
     { id: user._id, email: user.email, role: user.role },
     process.env.JWT_SECRET,
-    { expiresIn: '24h' }
+    { expiresIn: "24h" }
   );
 };
 
-
-   //Enregistrement d'un utilisateur
+// =====================
+// Enregistrement d'un utilisateur
+// =====================
 
 const registerUser = async (req, res) => {
   try {
-    const { fullName, email, password, role, adminDetails, medecinDetails } = req.body;
+    const {
+      fullName,
+      email,
+      password,
+      role,
+      patientDetails,
+      medecinDetails,
+      pharmacienDetails,
+      assistantDetails,
+      adminDetails,
+      moderatorDetails,
+    } = req.body;
 
+    // 1. Champs de base
     if (!fullName || !email || !password) {
-      return res.status(400).json({ message: "Nom, email et mot de passe sont obligatoires." });
+      return res
+        .status(400)
+        .json({ message: "Nom, email et mot de passe sont obligatoires." });
     }
 
-    // Vérifier si l'utilisateur existe déjà
+    // 2. Doublon email
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ message: "Un utilisateur avec cet email existe déjà." });
+      return res
+        .status(400)
+        .json({ message: "Un utilisateur avec cet email existe déjà." });
     }
 
-    // Hasher le mot de passe
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Préparer les données utilisateur
+    // 3. Préparer les données utilisateur
+    // Si ton modèle User a un pre('save') pour hasher le mot de passe,
+    // tu peux laisser le mot de passe en clair ici.
     const userData = {
       fullName,
       email,
-      password: hashedPassword,
-      role: role || 'Patient',
-      statut: 'ACTIF'
+      password, // sera hashé par pre-save si défini dans le modèle
+      role: role || "Patient",
+      statut: "ACTIF",
     };
 
-    //  Médecin : medecinDetails obligatoire
-    if (role === 'Medecin') {
-      if (!medecinDetails || !medecinDetails.specialite || !medecinDetails.cabinet) {
-        return res.status(400).json({ message: "medecinDetails obligatoire pour les médecins." });
-      }
-      userData.medecinDetails = medecinDetails;
-    }
+    // 4. Détails par rôle
 
-    //  Admin : adminDetails facultatif
-    if (role === 'Admin' && adminDetails) {
-      userData.adminDetails = {
-        adminCode: adminDetails?.adminCode || 'ADMIN-001',
-        permissions: adminDetails?.permissions || ['all', 'users', 'services']
+    // Patient (si patientDetails est activé dans ton modèle)
+    if (userData.role === "Patient" && patientDetails) {
+      userData.patientDetails = {
+        dateNaissance: patientDetails.dateNaissance || undefined,
+        sexe: patientDetails.sexe || undefined,
+        contact: (patientDetails.contact || "").trim(),
       };
     }
 
-    const newUser = await User.create(userData);
+    // Médecin : medecinDetails obligatoire
+    if (userData.role === "Medecin") {
+      if (
+        !medecinDetails ||
+        !medecinDetails.specialite ||
+        !medecinDetails.telephone ||
+        !medecinDetails.adresseCabinet
+      ) {
+        return res.status(400).json({
+          message:
+            "medecinDetails (specialite, telephone, adresseCabinet) est obligatoire pour les médecins.",
+        });
+      }
+
+      userData.medecinDetails = {
+        specialite: medecinDetails.specialite.trim(),
+        telephone: medecinDetails.telephone.trim(),
+        adresseCabinet: medecinDetails.adresseCabinet.trim(),
+      };
+    }
+
+    // Pharmacien
+    if (userData.role === "Pharmacien" && pharmacienDetails) {
+      userData.pharmacienDetails = {
+        nomPharmacie: (pharmacienDetails.nomPharmacie || "").trim(),
+        adressePharmacie: (pharmacienDetails.adressePharmacie || "").trim(),
+      };
+    }
+
+    // Assistant
+    if (userData.role === "Assistant" && assistantDetails) {
+      userData.assistantDetails = {
+        poste: (assistantDetails.poste || "").trim(),
+        serviceId: assistantDetails.serviceId || undefined, // doit être un ObjectId valide
+      };
+    }
+
+    // Admin / SuperAdmin
+    if (userData.role === "Admin" || userData.role === "SuperAdmin") {
+      userData.adminDetails = {
+        adminCode: (adminDetails?.adminCode || "ADMIN-001").trim(),
+        permissions: Array.isArray(adminDetails?.permissions)
+          ? adminDetails.permissions
+          : [],
+      };
+    }
+
+    // Modérateur
+    if (userData.role === "Moderateur") {
+      userData.moderatorDetails = {
+        moderatedSections: Array.isArray(
+          moderatorDetails?.moderatedSections
+        )
+          ? moderatorDetails.moderatedSections
+          : [],
+      };
+    }
+
+    // 5. Création et sauvegarde
+    const newUser = new User(userData);
+    await newUser.save();
 
     const token = generateToken(newUser);
 
@@ -66,43 +138,67 @@ const registerUser = async (req, res) => {
       fullName: newUser.fullName,
       email: newUser.email,
       role: newUser.role,
-      statut: newUser.statut
+      statut: newUser.statut,
     };
 
     return res.status(201).json({
       message: "Utilisateur enregistré avec succès.",
       user: userResponse,
-      token
+      token,
     });
-
   } catch (error) {
-    console.error("REGISTER ERROR:", error.message);
+    console.error("REGISTER ERROR:", error);
+
+    // Validation Mongoose
+    if (error.name === "ValidationError") {
+      return res.status(422).json({
+        message: "Erreur de validation.",
+        validationErrors: error.errors,
+      });
+    }
+
+    // Doublon Mongo (unique)
+    if (error.code === 11000) {
+      return res.status(409).json({
+        message: "Données en doublon",
+        errorName: "MongoServerError",
+        code: 11000,
+      });
+    }
+
     return res.status(500).json({
       message: "Erreur interne du serveur.",
-      error: error.message
+      error: error.message,
     });
   }
 };
 
-
-   //Connexion d'un utilisateur
+// =====================
+// Connexion d'un utilisateur
+// =====================
 
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ message: "Email et mot de passe sont requis." });
+      return res
+        .status(400)
+        .json({ message: "Email et mot de passe sont requis." });
     }
 
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: "Email ou mot de passe incorrect." });
+      return res
+        .status(400)
+        .json({ message: "Email ou mot de passe incorrect." });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return res.status(400).json({ message: "Email ou mot de passe incorrect." });
+      return res
+        .status(400)
+        .json({ message: "Email ou mot de passe incorrect." });
     }
 
     const token = generateToken(user);
@@ -115,20 +211,21 @@ const loginUser = async (req, res) => {
         fullName: user.fullName,
         email: user.email,
         role: user.role,
-        statut: user.statut
-      }
+        statut: user.statut,
+      },
     });
-
   } catch (error) {
     console.error("LOGIN ERROR:", error.message);
     return res.status(500).json({
       message: "Erreur interne du serveur.",
-      error: error.message
+      error: error.message,
     });
   }
 };
 
-
+// =====================
+// Mot de passe oublié
+// =====================
 
 const forgotPassword = async (req, res) => {
   try {
@@ -138,10 +235,7 @@ const forgotPassword = async (req, res) => {
     if (!user)
       return res.status(404).json({ message: "Utilisateur non trouvé" });
 
-    // Génération token sécurisé
     const resetToken = crypto.randomBytes(32).toString("hex");
-
-    // Génération OTP 6 chiffres
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
     user.resetPasswordToken = crypto
@@ -159,16 +253,18 @@ const forgotPassword = async (req, res) => {
     console.log("Lien:", resetUrl);
     console.log("OTP:", otp);
 
-    // Ici normalement tu envoies un email avec nodemailer
-
-    res.json({
+    return res.json({
       message: "Email de réinitialisation envoyé.",
     });
-
   } catch (error) {
-    res.status(500).json({ message: "Erreur serveur" });
+    console.error("FORGOT ERROR:", error);
+    return res.status(500).json({ message: "Erreur serveur" });
   }
 };
+
+// =====================
+// Réinitialisation du mot de passe
+// =====================
 
 const resetPassword = async (req, res) => {
   try {
@@ -193,22 +289,24 @@ const resetPassword = async (req, res) => {
     if (!isOtpValid)
       return res.status(400).json({ message: "Code de confirmation invalide." });
 
-    user.password = await bcrypt.hash(password, 12);
+    // soit tu laisses le pre-save hasher, soit tu hashes ici. Choisissons le pre-save :
+    user.password = password;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
     user.resetPasswordOTP = undefined;
 
     await user.save();
 
-    res.json({ message: "Mot de passe mis à jour avec succès." });
-
+    return res.json({ message: "Mot de passe mis à jour avec succès." });
   } catch (error) {
-    res.status(500).json({ message: "Erreur serveur" });
+    console.error("RESET ERROR:", error);
+    return res.status(500).json({ message: "Erreur serveur" });
   }
 };
+
 module.exports = {
   registerUser,
   loginUser,
   forgotPassword,
-  resetPassword
+  resetPassword,
 };
