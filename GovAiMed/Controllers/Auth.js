@@ -1,22 +1,26 @@
-// controllers/authController.js
 const User = require("../Models/UserModel");
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 
-// Générer un token JWT
+/* =========================
+   TOKEN GENERATION
+========================= */
 const generateToken = (user) => {
   return jwt.sign(
-    { id: user._id, email: user.email, role: user.role },
+    {
+      id: user._id,
+      email: user.email,
+      role: user.role,
+    },
     process.env.JWT_SECRET,
     { expiresIn: "24h" }
   );
 };
 
-// =====================
-// Enregistrement d'un utilisateur
-// =====================
-
+/* =========================
+   REGISTER
+========================= */
 const registerUser = async (req, res) => {
   try {
     const {
@@ -32,54 +36,51 @@ const registerUser = async (req, res) => {
       moderatorDetails,
     } = req.body;
 
-    // 1. Champs de base
     if (!fullName || !email || !password) {
-      return res
-        .status(400)
-        .json({ message: "Nom, email et mot de passe sont obligatoires." });
+      return res.status(400).json({
+        message: "fullName, email et password sont obligatoires",
+      });
     }
 
-    // 2. Doublon email
-    const existingUser = await User.findOne({ email });
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
-      return res
-        .status(400)
-        .json({ message: "Un utilisateur avec cet email existe déjà." });
+      return res.status(400).json({
+        message: "Email déjà utilisé",
+      });
     }
 
-    // 3. Préparer les données utilisateur
-    // Si ton modèle User a un pre('save') pour hasher le mot de passe,
-    // tu peux laisser le mot de passe en clair ici.
     const userData = {
-      fullName,
-      email,
-      password, // sera hashé par pre-save si défini dans le modèle
+      fullName: fullName.trim(),
+      email: normalizedEmail,
+      password,
       role: role || "Patient",
       statut: "ACTIF",
     };
 
-    // 4. Détails par rôle
+    /* =========================
+       ROLE SPECIFIQUE
+    ========================= */
 
-    // Patient (si patientDetails est activé dans ton modèle)
     if (userData.role === "Patient" && patientDetails) {
       userData.patientDetails = {
         dateNaissance: patientDetails.dateNaissance || undefined,
         sexe: patientDetails.sexe || undefined,
-        contact: (patientDetails.contact || "").trim(),
+        contact: patientDetails.contact?.trim(),
       };
+      userData.date_of_birth = patientDetails.dateNaissance || undefined;
+      userData.sexe = patientDetails.sexe || undefined;
     }
 
-    // Médecin : medecinDetails obligatoire
     if (userData.role === "Medecin") {
       if (
-        !medecinDetails ||
-        !medecinDetails.specialite ||
-        !medecinDetails.telephone ||
-        !medecinDetails.adresseCabinet
+        !medecinDetails?.specialite ||
+        !medecinDetails?.telephone ||
+        !medecinDetails?.adresseCabinet
       ) {
         return res.status(400).json({
-          message:
-            "medecinDetails (specialite, telephone, adresseCabinet) est obligatoire pour les médecins.",
+          message: "medecinDetails incomplet",
         });
       }
 
@@ -90,186 +91,175 @@ const registerUser = async (req, res) => {
       };
     }
 
-    // Pharmacien
-    if (userData.role === "Pharmacien" && pharmacienDetails) {
+    if (userData.role === "Pharmacien") {
       userData.pharmacienDetails = {
-        nomPharmacie: (pharmacienDetails.nomPharmacie || "").trim(),
-        adressePharmacie: (pharmacienDetails.adressePharmacie || "").trim(),
+        nomPharmacie: (pharmacienDetails?.nomPharmacie || "").trim(),
+        adressePharmacie: (pharmacienDetails?.adressePharmacie || "").trim(),
       };
     }
 
-    // Assistant
-    if (userData.role === "Assistant" && assistantDetails) {
+    if (userData.role === "Assistant") {
       userData.assistantDetails = {
-        poste: (assistantDetails.poste || "").trim(),
-        serviceId: assistantDetails.serviceId || undefined, // doit être un ObjectId valide
+        poste: (assistantDetails?.poste || "").trim(),
+        serviceId: assistantDetails?.serviceId || undefined,
       };
     }
 
-    // Admin / SuperAdmin
-    if (userData.role === "Admin" || userData.role === "SuperAdmin") {
+    if (["Admin", "SuperAdmin"].includes(userData.role)) {
       userData.adminDetails = {
-        adminCode: (adminDetails?.adminCode || "ADMIN-001").trim(),
-        permissions: Array.isArray(adminDetails?.permissions)
-          ? adminDetails.permissions
-          : [],
+        adminCode: (adminDetails?.adminCode || `ADMIN-${Date.now()}`).trim(),
+        permissions: adminDetails?.permissions || [],
       };
     }
 
-    // Modérateur
     if (userData.role === "Moderateur") {
       userData.moderatorDetails = {
-        moderatedSections: Array.isArray(
-          moderatorDetails?.moderatedSections
-        )
-          ? moderatorDetails.moderatedSections
-          : [],
+        moderatedSections: moderatorDetails?.moderatedSections || [],
       };
     }
 
-    // 5. Création et sauvegarde
     const newUser = new User(userData);
     await newUser.save();
 
     const token = generateToken(newUser);
 
-    const userResponse = {
-      id: newUser._id,
-      fullName: newUser.fullName,
-      email: newUser.email,
-      role: newUser.role,
-      statut: newUser.statut,
-    };
-
     return res.status(201).json({
-      message: "Utilisateur enregistré avec succès.",
-      user: userResponse,
+      message: "Utilisateur créé avec succès",
+      user: {
+        id: newUser._id,
+        fullName: newUser.fullName,
+        email: newUser.email,
+        role: newUser.role,
+        statut: newUser.statut,
+      },
       token,
     });
   } catch (error) {
     console.error("REGISTER ERROR:", error);
 
-    // Validation Mongoose
     if (error.name === "ValidationError") {
       return res.status(422).json({
-        message: "Erreur de validation.",
+        message: "Erreur de validation",
         validationErrors: error.errors,
       });
     }
 
-    // Doublon Mongo (unique)
     if (error.code === 11000) {
       return res.status(409).json({
-        message: "Données en doublon",
-        errorName: "MongoServerError",
-        code: 11000,
+        message: "Email déjà existant",
       });
     }
 
     return res.status(500).json({
-      message: "Erreur interne du serveur.",
+      message: "Erreur serveur",
       error: error.message,
     });
   }
 };
 
-// =====================
-// Connexion d'un utilisateur
-// =====================
+
+ //  LOGIN (CORRIGÉ)
 
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res
-        .status(400)
-        .json({ message: "Email et mot de passe sont requis." });
+      return res.status(400).json({
+        message: "Email et password requis",
+      });
     }
 
-    const user = await User.findOne({ email });
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const user = await User.findOne({ email: normalizedEmail });
+
     if (!user) {
-      return res
-        .status(400)
-        .json({ message: "Email ou mot de passe incorrect." });
+      return res.status(400).json({
+        message: "Utilisateur introuvable",
+      });
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return res
-        .status(400)
-        .json({ message: "Email ou mot de passe incorrect." });
+    const isMatch = await user.comparePassword(password);
+
+    if (!isMatch) {
+      return res.status(400).json({
+        message: "Mot de passe incorrect",
+      });
+    }
+
+    if (!user.password.startsWith('$2')) {
+      user.password = password;
+      await user.save();
     }
 
     const token = generateToken(user);
 
     return res.status(200).json({
-      message: "Connexion réussie.",
+      message: "Connexion réussie",
       token,
       user: {
         id: user._id,
         fullName: user.fullName,
         email: user.email,
         role: user.role,
-        statut: user.statut,
       },
     });
   } catch (error) {
-    console.error("LOGIN ERROR:", error.message);
+    console.error("LOGIN ERROR:", error);
+
     return res.status(500).json({
-      message: "Erreur interne du serveur.",
+      message: "Erreur serveur",
       error: error.message,
     });
   }
 };
 
-// =====================
-// Mot de passe oublié
-// =====================
+
+ //  FORGOT PASSWORD
 
 const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
 
-    const user = await User.findOne({ email });
-    if (!user)
-      return res.status(404).json({ message: "Utilisateur non trouvé" });
+    const user = await User.findOne({
+      email: email?.trim().toLowerCase(),
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "Utilisateur introuvable" });
+    }
 
     const resetToken = crypto.randomBytes(32).toString("hex");
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
     user.resetPasswordToken = crypto
       .createHash("sha256")
       .update(resetToken)
       .digest("hex");
 
-    user.resetPasswordExpire = Date.now() + 15 * 60 * 1000; // 15 min
-    user.resetPasswordOTP = await bcrypt.hash(otp, 10);
+    user.resetPasswordExpire = Date.now() + 15 * 60 * 1000;
 
     await user.save();
 
-    const resetUrl = `http://localhost:3000/reset-password/${resetToken}`;
-
-    console.log("Lien:", resetUrl);
-    console.log("OTP:", otp);
-
     return res.json({
-      message: "Email de réinitialisation envoyé.",
+      message: "Lien de reset généré",
+      resetLink: `http://localhost:3000/reset-password/${resetToken}`,
     });
   } catch (error) {
-    console.error("FORGOT ERROR:", error);
-    return res.status(500).json({ message: "Erreur serveur" });
+    return res.status(500).json({
+      message: "Erreur serveur",
+      error: error.message,
+    });
   }
 };
 
-// =====================
-// Réinitialisation du mot de passe
-// =====================
+
+  // RESET PASSWORD
 
 const resetPassword = async (req, res) => {
   try {
     const { token } = req.params;
-    const { email, password, otp } = req.body;
+    const { email, password } = req.body;
 
     const hashedToken = crypto
       .createHash("sha256")
@@ -277,30 +267,31 @@ const resetPassword = async (req, res) => {
       .digest("hex");
 
     const user = await User.findOne({
-      email,
+      email: email?.trim().toLowerCase(),
       resetPasswordToken: hashedToken,
       resetPasswordExpire: { $gt: Date.now() },
     });
 
-    if (!user)
-      return res.status(400).json({ message: "Lien invalide ou expiré." });
+    if (!user) {
+      return res.status(400).json({
+        message: "Token invalide ou expiré",
+      });
+    }
 
-    const isOtpValid = await bcrypt.compare(otp, user.resetPasswordOTP);
-    if (!isOtpValid)
-      return res.status(400).json({ message: "Code de confirmation invalide." });
-
-    // soit tu laisses le pre-save hasher, soit tu hashes ici. Choisissons le pre-save :
     user.password = password;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
-    user.resetPasswordOTP = undefined;
 
     await user.save();
 
-    return res.json({ message: "Mot de passe mis à jour avec succès." });
+    return res.json({
+      message: "Mot de passe mis à jour",
+    });
   } catch (error) {
-    console.error("RESET ERROR:", error);
-    return res.status(500).json({ message: "Erreur serveur" });
+    return res.status(500).json({
+      message: "Erreur serveur",
+      error: error.message,
+    });
   }
 };
 

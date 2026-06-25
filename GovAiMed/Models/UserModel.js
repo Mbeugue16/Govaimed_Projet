@@ -1,12 +1,13 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt'); // 🟢 AJOUT : Importation de bcrypt pour la comparaison des mots de passe
 
 
-   // Sous-schemas des profils
+// 1. Sous-schémas des profils
 
 
 // Admin
 const adminSchema = new mongoose.Schema({
-  adminCode: { type: String, required: true, unique: true },
+  adminCode: { type: String, required: true },
   permissions: { type: [String], default: [] }
 }, { _id: false });
 
@@ -34,16 +35,16 @@ const assistantSchema = new mongoose.Schema({
   serviceId: { type: mongoose.Schema.Types.ObjectId, ref: 'Service' }
 }, { _id: false });
 
-//Medecin
+// Médecin
 const medecinSchema = new mongoose.Schema({
-specialite: { type: String, required: true, trim: true },
-telephone: { type: String, required: true, trim: true },
-adresseCabinet: { type: String, required: true, trim: true }
+  specialite: { type: String, required: true, trim: true },
+  telephone: { type: String, required: true, trim: true },
+  adresseCabinet: { type: String, required: true, trim: true }
 }, { _id: false });
 
 
-  // Schéma principal User
 
+// 2. Schéma principal User
 
 const userSchema = new mongoose.Schema({
   fullName: { type: String, required: true, minlength: 3, maxlength: 50 },
@@ -64,15 +65,41 @@ const userSchema = new mongoose.Schema({
   ref: { type: String },
 
   resetPasswordToken: String,
-resetPasswordExpire: Date,
+  resetPasswordExpire: Date,
 
-  // patientDetails: { type: patientSchema, required: function () { return this.role === 'Patient'; } },
-  medecinDetails: {  type: medecinSchema, required: function () { return this.role === 'Medecin'; }}, // le modèle Medecin est séparé
+  // Détails spécifiques selon le rôle
+  patientDetails: { type: patientSchema },
+  medecinDetails: { type: medecinSchema, required: function () { return this.role === 'Medecin'; } },
   pharmacienDetails: { type: pharmacienSchema, required: function () { return this.role === 'Pharmacien'; } },
   assistantDetails: { type: assistantSchema, required: function () { return this.role === 'Assistant'; } },
   adminDetails: { type: adminSchema, required: function () { return this.role === 'Admin' || this.role === 'SuperAdmin'; } },
   moderatorDetails: { type: moderatorSchema, required: function () { return this.role === 'Moderateur'; } }
-
 }, { timestamps: true });
+
+
+
+// 3. Méthodes d'instance (Mongoose Methods)
+
+
+userSchema.methods.comparePassword = async function (candidatePassword) {
+  if (!this.password || !candidatePassword) return false;
+
+  if (this.password.startsWith('$2')) {
+    return bcrypt.compare(candidatePassword, this.password);
+  }
+
+  return candidatePassword === this.password;
+};
+
+userSchema.pre('save', async function () {
+  if (!this.isModified('password')) return;
+
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+});
+
+
+// 4. Compilation et Export du Modèle
+
 
 module.exports = mongoose.model('User', userSchema);

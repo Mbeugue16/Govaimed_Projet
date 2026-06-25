@@ -1,4 +1,3 @@
-// src/auth/Login.jsx
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { postData, setAuthToken, decodeToken } from "../api/endpoint";
@@ -20,7 +19,10 @@ const Login = () => {
     setError("");
 
     try {
-      const data = await postData("/auth/login", credentials);
+      const data = await postData("/auth/login", {
+        email: credentials.email.trim().toLowerCase(),
+        password: credentials.password,
+      });
 
       setAuthToken(data.token);
 
@@ -43,10 +45,7 @@ const Login = () => {
       navigate(roleRoutes[decoded.role] || "/", { replace: true });
 
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
-        "Erreur de connexion, vérifiez vos identifiants"
-      );
+      setError(err.message || "Erreur de connexion, vérifiez vos identifiants");
     } finally {
       setLoading(false);
     }
@@ -112,7 +111,7 @@ const Login = () => {
   );
 };
 
-/* ================= STYLES ================= */
+//STYLES 
 
 const styles = {
   container: {

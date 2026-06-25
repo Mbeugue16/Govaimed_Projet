@@ -1,4 +1,3 @@
-// src/api/endpoint.js
 import axios from "axios";
 
 //  BASE URL
@@ -50,20 +49,30 @@ export const isTokenValid = (token) => {
   return decoded && decoded.exp * 1000 > Date.now();
 };
 
-// ERROR HANDLER
+// ERROR HANDLER (Amélioré pour traquer les erreurs 400 et 500)
 export const handleApiError = (error) => {
+  // On affiche le détail complet de l'erreur serveur dans la console pour déboguer
+  console.error("Détails de l'erreur API :", error.response || error);
+
   if (!error.response) return new Error("Erreur réseau ou serveur indisponible");
 
   const { status, data } = error.response;
 
   if (status === 401) {
     removeAuthToken();
-    window.location.href = "/login";
+    if (window.location.pathname !== "/login") {
+      window.location.href = "/login";
+    }
     return new Error("Session expirée. Redirection vers login...");
   }
 
-  if (status === 403) return new Error(data.message || "🔒 Accès refusé");
+  if (status === 403) return new Error(data?.message || "🔒 Accès refusé");
   if (status === 404) return new Error("📁 Endpoint non trouvé");
+  
+  // Prise en charge explicite des mauvaises requêtes ou crashs du serveur
+  if (status === 400 || status === 500) {
+    return new Error(data?.message || `Erreur serveur (${status}). Vérifiez les données envoyées.`);
+  }
 
   // MongoDB doublon
   if (data?.errorName === 'MongoServerError' && data.code === 11000) {
@@ -91,11 +100,13 @@ export const getData = async (endpoint, params = {}) => {
   }
 };
 
+// Sécurisation de la méthode POST incriminée
 export const postData = async (endpoint, payload) => {
   try {
     const res = await axiosInstance.post(endpoint, payload);
     return res.data;
   } catch (err) {
+    // L'erreur est interceptée et formatée ici
     throw handleApiError(err);
   }
 };
@@ -118,8 +129,7 @@ export const deleteData = async (endpoint) => {
   }
 };
 
-// EXPORT DEFAULT 
-export default {
+const apiService = {
   getAuthToken,
   setAuthToken,
   removeAuthToken,
@@ -130,3 +140,5 @@ export default {
   putData,
   deleteData
 };
+
+export default apiService;

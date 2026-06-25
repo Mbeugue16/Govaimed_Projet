@@ -1,11 +1,6 @@
 // Controllers/UserController.js
-const mongoose = require("mongoose");
 const User = require("../Models/UserModel");
 const bcrypt = require("bcrypt");
-
-// =====================
-// Création d'un nouvel utilisateur (back-office / admin)
-// =====================
 
 const createNewUser = async (req, res) => {
   try {
@@ -19,8 +14,6 @@ const createNewUser = async (req, res) => {
       date_of_birth,
       sexe,
       statut,
-
-      // détails par rôle
       patientDetails,
       medecinDetails,
       pharmacienDetails,
@@ -29,37 +22,33 @@ const createNewUser = async (req, res) => {
       moderatorDetails,
     } = req.body;
 
-    // Vérifier doublon email
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res
-        .status(400)
-        .json({ message: "Un utilisateur avec cet email existe déjà" });
-    }
-
-    // Mot de passe requis
     const passwordToUse = motDePasse || password;
     if (!passwordToUse) {
-      return res
-        .status(400)
-        .json({ message: "Le mot de passe est requis" });
+      return res.status(400).json({ message: "Le mot de passe est requis" });
     }
 
-    // Ici tu peux choisir:
-    // - soit laisser le pre('save') du modèle hasher (comme pour registerUser)
-    // - soit hasher manuellement.
-    // Je vais suivre la même logique que AuthController et laisser le pre-save :
+    if (!fullName || !email) {
+      return res.status(400).json({ message: "Nom et email requis" });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const existingUser = await User.findOne({ email: normalizedEmail });
+    if (existingUser) {
+      return res.status(400).json({
+        message: "Un utilisateur avec cet email existe déjà",
+      });
+    }
+
     const userData = {
-      fullName,
-      email,
-      password: passwordToUse, // sera hashé par pre('save') du modèle User
+      fullName: fullName.trim(),
+      email: normalizedEmail,
+      password: passwordToUse,
       role: role || "Patient",
       date_of_birth: dateNaissance || date_of_birth || undefined,
       sexe: sexe || undefined,
       statut: statut || "ACTIF",
     };
 
-    // Détails Patient (facultatif si tu ne l'utilises pas ici)
     if (userData.role === "Patient" && patientDetails) {
       userData.patientDetails = {
         dateNaissance: patientDetails.dateNaissance || undefined,
@@ -68,7 +57,6 @@ const createNewUser = async (req, res) => {
       };
     }
 
-    // Détails Médecin
     if (userData.role === "Medecin") {
       if (
         !medecinDetails ||
@@ -89,7 +77,6 @@ const createNewUser = async (req, res) => {
       };
     }
 
-    // Détails Pharmacien
     if (userData.role === "Pharmacien" && pharmacienDetails) {
       userData.pharmacienDetails = {
         nomPharmacie: (pharmacienDetails.nomPharmacie || "").trim(),
@@ -97,33 +84,25 @@ const createNewUser = async (req, res) => {
       };
     }
 
-    // Détails Assistant
     if (userData.role === "Assistant" && assistantDetails) {
       userData.assistantDetails = {
         poste: (assistantDetails.poste || "").trim(),
-        serviceId: assistantDetails.serviceId || undefined, // devrait être un ObjectId valide
+        serviceId: assistantDetails.serviceId || undefined,
       };
     }
 
-    // Détails Admin / SuperAdmin
-    if (
-      userData.role === "Admin" ||
-      userData.role === "SuperAdmin"
-    ) {
+    if (userData.role === "Admin" || userData.role === "SuperAdmin") {
       userData.adminDetails = {
-        adminCode: (adminDetails?.adminCode || "ADMIN-001").trim(),
+        adminCode: (adminDetails?.adminCode || `ADMIN-${Date.now()}`).trim(),
         permissions: Array.isArray(adminDetails?.permissions)
           ? adminDetails.permissions
           : [],
       };
     }
 
-    // Détails Modérateur
     if (userData.role === "Moderateur") {
       userData.moderatorDetails = {
-        moderatedSections: Array.isArray(
-          moderatorDetails?.moderatedSections
-        )
+        moderatedSections: Array.isArray(moderatorDetails?.moderatedSections)
           ? moderatorDetails.moderatedSections
           : [],
       };
@@ -132,10 +111,13 @@ const createNewUser = async (req, res) => {
     const newUser = new User(userData);
     await newUser.save();
 
-    const { password: _, ...userResponse } = newUser.toObject();
-    return res
-      .status(201)
-      .json({ message: "Utilisateur créé avec succès", user: userResponse });
+    const userResponse = newUser.toObject();
+    delete userResponse.password;
+
+    return res.status(201).json({
+      message: "Utilisateur créé avec succès",
+      user: userResponse,
+    });
   } catch (error) {
     console.error("Erreur création utilisateur:", error);
 
@@ -154,28 +136,22 @@ const createNewUser = async (req, res) => {
       });
     }
 
-    return res
-      .status(500)
-      .json({ message: "Erreur serveur", error: error.message });
+    return res.status(500).json({
+      message: "Erreur serveur",
+      error: error.message,
+    });
   }
-}
-
-// =====================
-// Récupérer tous les utilisateurs (ADMIN)
-// =====================
+};
 
 const getAllUsers = async (req, res) => {
   try {
-    if (req.user?.role !== "Admin" && req.user?.role !== "SuperAdmin") {
-      return res
-        .status(403)
-        .json({ message: "Accès réservé aux administrateurs" });
+    if (!["Admin", "SuperAdmin"].includes(req.user?.role)) {
+      return res.status(403).json({ message: "Accès réservé aux administrateurs" });
     }
 
     const users = await User.find().select("-password");
     return res.status(200).json(users);
   } catch (error) {
-    console.error("Erreur getAllUsers:", error);
     return res.status(500).json({
       message: "Erreur récupération utilisateurs",
       error: error.message,
@@ -183,20 +159,14 @@ const getAllUsers = async (req, res) => {
   }
 };
 
-// =====================
-// Récupérer un utilisateur par ID
-// =====================
-
 const getUserById = async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select("-password");
     if (!user) {
       return res.status(404).json({ message: "Utilisateur non trouvé" });
     }
-
     return res.status(200).json(user);
   } catch (error) {
-    console.error("Erreur getUserById:", error);
     return res.status(500).json({
       message: "Erreur récupération utilisateur",
       error: error.message,
@@ -204,15 +174,13 @@ const getUserById = async (req, res) => {
   }
 };
 
-// =====================
-// Mettre à jour un utilisateur
-// =====================
-
 const updateUser = async (req, res) => {
   try {
     const updates = { ...req.body };
 
-    // si on met à jour le mot de passe, le laisser au pre-save (optionnel)
+    if (updates.email) updates.email = updates.email.trim().toLowerCase();
+    if (updates.fullName) updates.fullName = updates.fullName.trim();
+
     if (updates.password) {
       updates.password = await bcrypt.hash(updates.password, 10);
     }
@@ -232,7 +200,6 @@ const updateUser = async (req, res) => {
       user: updatedUser,
     });
   } catch (error) {
-    console.error("Erreur updateUser:", error);
     return res.status(500).json({
       message: "Erreur mise à jour utilisateur",
       error: error.message,
@@ -240,22 +207,14 @@ const updateUser = async (req, res) => {
   }
 };
 
-// =====================
-// Supprimer un utilisateur
-// =====================
-
 const deleteUser = async (req, res) => {
   try {
     const deletedUser = await User.findByIdAndDelete(req.params.id);
     if (!deletedUser) {
       return res.status(404).json({ message: "Utilisateur non trouvé" });
     }
-
-    return res
-      .status(200)
-      .json({ message: "Utilisateur supprimé avec succès" });
+    return res.status(200).json({ message: "Utilisateur supprimé avec succès" });
   } catch (error) {
-    console.error("Erreur deleteUser:", error);
     return res.status(500).json({
       message: "Erreur suppression utilisateur",
       error: error.message,
@@ -263,26 +222,17 @@ const deleteUser = async (req, res) => {
   }
 };
 
-// =====================
-// Récupérer tous les patients
-// =====================
-
 const getAllPatients = async (req, res) => {
   try {
     const patients = await User.find({ role: "Patient" }).select("-password");
     return res.status(200).json(patients);
   } catch (err) {
-    console.error("Erreur getAllPatients:", err.message);
     return res.status(500).json({
       message: "Erreur serveur",
       error: err.message,
     });
   }
 };
-
-// =====================
-// Récupérer le profil connecté
-// =====================
 
 const getMe = async (req, res) => {
   try {
@@ -292,17 +242,12 @@ const getMe = async (req, res) => {
     }
     return res.status(200).json(user);
   } catch (err) {
-    console.error("Erreur getMe:", err.message);
     return res.status(500).json({
       message: "Erreur serveur",
       error: err.message,
     });
   }
 };
-
-// =====================
-// Récupérer les dossiers (exemple)
-// =====================
 
 const getDossiers = async (req, res) => {
   try {
@@ -312,7 +257,7 @@ const getDossiers = async (req, res) => {
       });
     }
 
-    const mockDossiers = [
+    return res.status(200).json([
       {
         _id: "1",
         patientName: "Jean Dupont",
@@ -327,21 +272,14 @@ const getDossiers = async (req, res) => {
         diagnostic: "Lombalgie chronique",
         date: new Date().toISOString(),
       },
-    ];
-
-    return res.status(200).json(mockDossiers);
+    ]);
   } catch (error) {
-    console.error("Erreur getDossiers:", error);
     return res.status(500).json({
       message: "Erreur récupération dossiers",
       error: error.message,
     });
   }
 };
-
-// =====================
-// Liste des médecins pour les patients
-// =====================
 
 const getMedecinsForPatients = async (req, res) => {
   try {
@@ -359,12 +297,12 @@ const getMedecinsForPatients = async (req, res) => {
       email: med.email,
     }));
 
-    res.status(200).json(medecinsFormates);
+    return res.status(200).json(medecinsFormates);
   } catch (error) {
-    console.error("Erreur getMedecinsForPatients:", error);
-    res
-      .status(500)
-      .json({ message: "Erreur récupération médecins", error: error.message });
+    return res.status(500).json({
+      message: "Erreur récupération médecins",
+      error: error.message,
+    });
   }
 };
 
