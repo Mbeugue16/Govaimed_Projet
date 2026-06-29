@@ -1,13 +1,19 @@
 import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { FiUsers, FiShield, FiActivity, FiSettings } from "react-icons/fi";
 import * as api from "../api/endpoint";
+import { useAuth } from "../context/AuthContext";
+import { getDisplayName } from "../utils/userDisplay";
+import "../Styles/Dashboard.css";
 import "./AdminDashboard.css";
 
 const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const { user } = useAuth();
+  const displayName = getDisplayName(user);
 
-  // Form state pour edit user
   const [editingUser, setEditingUser] = useState(null);
   const [formData, setFormData] = useState({
     fullName: "",
@@ -32,12 +38,12 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleEditClick = (user) => {
-    setEditingUser(user._id);
+  const handleEditClick = (u) => {
+    setEditingUser(u._id);
     setFormData({
-      fullName: user.fullName || "",
-      email: user.email || "",
-      role: user.role || "Patient",
+      fullName: u.fullName || "",
+      email: u.email || "",
+      role: u.role || "Patient",
     });
   };
 
@@ -70,67 +76,116 @@ const AdminDashboard = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  if (loading) return <p>Chargement des utilisateurs...</p>;
-  if (error) return <p style={{ color: "red" }}>{error}</p>;
+  const roleCounts = users.reduce((acc, u) => {
+    acc[u.role] = (acc[u.role] || 0) + 1;
+    return acc;
+  }, {});
+
+  if (loading) {
+    return (
+      <div className="dashboard-page">
+        <div className="dashboard-inner">
+          <p className="empty-state">Chargement des utilisateurs...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="dashboard-page">
+        <div className="dashboard-inner">
+          <p className="admin-error" role="alert">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="admin-dashboard">
-      <h2>Dashboard Admin</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Nom</th>
-            <th>Email</th>
-            <th>Rôle</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((user) =>
-            editingUser === user._id ? (
-              <tr key={user._id}>
-                <td>
-                  <input
-                    name="fullName"
-                    value={formData.fullName}
-                    onChange={handleChange}
-                  />
-                </td>
-                <td>
-                  <input
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                  />
-                </td>
-                <td>
-                  <select name="role" value={formData.role} onChange={handleChange}>
-                    <option value="Patient">Patient</option>
-                    <option value="Medecin">Médecin</option>
-                    <option value="Assistant">Assistant</option>
-                    <option value="Admin">Admin</option>
-                    <option value="SuperAdmin">SuperAdmin</option>
-                  </select>
-                </td>
-                <td>
-                  <button onClick={handleUpdate}>Save</button>
-                  <button onClick={() => setEditingUser(null)}>Cancel</button>
-                </td>
-              </tr>
-            ) : (
-              <tr key={user._id}>
-                <td>{user.fullName}</td>
-                <td>{user.email}</td>
-                <td>{user.role}</td>
-                <td>
-                  <button onClick={() => handleEditClick(user)}>Edit</button>
-                  <button onClick={() => handleDelete(user._id)}>Delete</button>
-                </td>
-              </tr>
-            )
-          )}
-        </tbody>
-      </table>
+    <div className="dashboard-page">
+      <div className="dashboard-inner">
+        <div className="dashboard-header">
+          <div className="dashboard-greeting">
+            <h1>Dashboard Admin</h1>
+            <p>Bienvenue, {displayName} — gestion de la plateforme GovAiMed.</p>
+          </div>
+          <div className="dashboard-avatar" aria-label={`Avatar de ${displayName}`}>
+            {displayName.charAt(0).toUpperCase()}
+          </div>
+        </div>
+
+        <div className="dashboard-stats">
+          {[
+            { icon: FiUsers, value: users.length, label: 'Utilisateurs', yellow: true },
+            { icon: FiShield, value: roleCounts.Medecin || 0, label: 'Médecins', yellow: false },
+            { icon: FiActivity, value: roleCounts.Patient || 0, label: 'Patients', yellow: false },
+            { icon: FiSettings, value: Object.keys(roleCounts).length, label: 'Rôles actifs', yellow: true },
+          ].map((stat) => (
+            <motion.div key={stat.label} className="stat-card" whileHover={{ y: -3 }}>
+              <div className={`stat-card-icon ${stat.yellow ? 'yellow' : ''}`}>
+                <stat.icon size={22} aria-hidden="true" />
+              </div>
+              <div>
+                <span className="stat-card-value">{stat.value}</span>
+                <span className="stat-card-label">{stat.label}</span>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        <div className="dashboard-panel admin-table-panel">
+          <h2><FiUsers aria-hidden="true" /> Gestion des utilisateurs</h2>
+          <div className="table-container">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Nom</th>
+                  <th>Email</th>
+                  <th>Rôle</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((u) =>
+                  editingUser === u._id ? (
+                    <tr key={u._id}>
+                      <td>
+                        <input name="fullName" value={formData.fullName} onChange={handleChange} className="admin-input" />
+                      </td>
+                      <td>
+                        <input name="email" value={formData.email} onChange={handleChange} className="admin-input" />
+                      </td>
+                      <td>
+                        <select name="role" value={formData.role} onChange={handleChange} className="admin-input">
+                          <option value="Patient">Patient</option>
+                          <option value="Medecin">Médecin</option>
+                          <option value="Assistant">Assistant</option>
+                          <option value="Admin">Admin</option>
+                          <option value="SuperAdmin">SuperAdmin</option>
+                        </select>
+                      </td>
+                      <td className="admin-actions">
+                        <button type="button" className="admin-btn save" onClick={handleUpdate}>Save</button>
+                        <button type="button" className="admin-btn cancel" onClick={() => setEditingUser(null)}>Cancel</button>
+                      </td>
+                    </tr>
+                  ) : (
+                    <tr key={u._id}>
+                      <td>{u.fullName}</td>
+                      <td>{u.email}</td>
+                      <td><span className="role-badge">{u.role}</span></td>
+                      <td className="admin-actions">
+                        <button type="button" className="admin-btn edit" onClick={() => handleEditClick(u)}>Edit</button>
+                        <button type="button" className="admin-btn delete" onClick={() => handleDelete(u._id)}>Delete</button>
+                      </td>
+                    </tr>
+                  )
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

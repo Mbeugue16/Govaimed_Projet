@@ -1,7 +1,10 @@
-// src/pages/Register.js
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { FiUserPlus, FiAlertCircle } from "react-icons/fi";
+import { FaHeartbeat, FaShieldAlt, FaUsers } from "react-icons/fa";
 import { postData } from "../api/endpoint";
+import "../Styles/Auth.css";
 
 const initialFormData = {
   fullName: "",
@@ -145,100 +148,100 @@ const Register = () => {
     }
   };
 
-  const inputStyle = {
-    width: "100%",
-    padding: "12px",
-    marginBottom: "12px",
-    boxSizing: "border-box",
-    border: "1px solid #ddd",
-    borderRadius: "8px",
-    fontSize: "16px",
-  };
+  const fieldClass = "auth-input auth-input-no-icon";
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "#f5f5f5",
-        padding: 20,
-      }}
-    >
-      <div
-        style={{
-          backgroundColor: "white",
-          padding: 40,
-          borderRadius: 12,
-          boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-          width: "100%",
-          maxWidth: 450,
-        }}
+    <div className="auth-page">
+      <motion.div
+        className="auth-illustration"
+        initial={{ opacity: 0, x: -30 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.6 }}
       >
-        <h2
-          style={{
-            textAlign: "center",
-            marginBottom: 30,
-            color: "#0b3c5d",
-          }}
-        >
-          Inscription
-        </h2>
-
-        {error && (
-          <div
-            style={{
-              backgroundColor: "#fee",
-              color: "#c33",
-              padding: 12,
-              borderRadius: 8,
-              marginBottom: 20,
-            }}
-          >
-            {error}
+        <div className="auth-illustration-content">
+          <div className="auth-illustration-icons">
+            <div className="auth-icon-circle"><FaHeartbeat size={28} /></div>
+            <div className="auth-icon-circle"><FaShieldAlt size={28} /></div>
+            <div className="auth-icon-circle"><FaUsers size={28} /></div>
           </div>
-        )}
+          <h2>Rejoignez GovAiMed</h2>
+          <p>
+            Créez votre compte et accédez à une plateforme sanitaire
+            moderne conçue pour patients, professionnels et administrateurs.
+          </p>
+        </div>
+      </motion.div>
 
-        <form onSubmit={handleSubmit}>
-          <input
-            name="fullName"
-            placeholder="Nom complet"
-            value={formData.fullName}
-            onChange={handleChange}
-            required
-            disabled={loading}
-            style={inputStyle}
-          />
-          <input
-            name="email"
-            type="email"
-            placeholder="email@exemple.com"
-            value={formData.email}
-            onChange={handleChange}
-            required
-            disabled={loading}
-            style={inputStyle}
-          />
-          <input
-            name="password"
-            type="password"
-            placeholder="Mot de passe"
-            value={formData.password}
-            onChange={handleChange}
-            required
-            minLength={6}
-            disabled={loading}
-            style={inputStyle}
-          />
+      <div className="auth-form-side">
+        <motion.div
+          className="auth-card auth-card-wide"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          <h1 className="auth-title">Inscription</h1>
+          <p className="auth-subtitle">Créez votre compte GovAiMed</p>
 
-          <select
-            name="role"
-            value={formData.role}
-            onChange={handleChange}
-            disabled={loading}
-            style={inputStyle}
-          >
+          {error && (
+            <div className="auth-error" role="alert">
+              <FiAlertCircle /> {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit}>
+            <div className="auth-field">
+              <label htmlFor="fullName">Nom complet</label>
+              <input
+                id="fullName"
+                name="fullName"
+                placeholder="Nom complet"
+                value={formData.fullName}
+                onChange={handleChange}
+                required
+                disabled={loading}
+                className={fieldClass}
+              />
+            </div>
+            <div className="auth-field">
+              <label htmlFor="email">Email</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="email@exemple.com"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                disabled={loading}
+                className={fieldClass}
+              />
+            </div>
+            <div className="auth-field">
+              <label htmlFor="password">Mot de passe</label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="Mot de passe (min. 6 caractères)"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                minLength={6}
+                disabled={loading}
+                className={fieldClass}
+              />
+            </div>
+
+            <div className="auth-field">
+              <label htmlFor="role">Rôle</label>
+              <select
+                id="role"
+                name="role"
+                value={formData.role}
+                onChange={handleChange}
+                disabled={loading}
+                className="auth-select"
+              >
             <option value="Patient">Patient</option>
             <option value="Medecin">Médecin</option>
             <option value="Pharmacien">Pharmacien</option>
@@ -250,178 +253,122 @@ const Register = () => {
             <option value="Admin">Administration</option>
             <option value="SuperAdmin">Super Administrateur</option>
           </select>
+            </div>
 
-          {/* Champs pour Patient */}
           {formData.role === "Patient" && (
-            <>
-              <input
-                type="date"
-                name="patientDetails.dateNaissance"
-                value={formData.patientDetails.dateNaissance}
-                onChange={handleChange}
-                disabled={loading}
-                style={inputStyle}
-              />
-              <select
-                name="patientDetails.sexe"
-                value={formData.patientDetails.sexe}
-                onChange={handleChange}
-                disabled={loading}
-                style={inputStyle}
-              >
-                <option value="">Sexe</option>
-                <option value="M">M</option>
-                <option value="F">F</option>
-              </select>
-              <input
-                name="patientDetails.contact"
-                placeholder="Contact"
-                value={formData.patientDetails.contact}
-                onChange={handleChange}
-                disabled={loading}
-                style={inputStyle}
-              />
-            </>
+            <div className="auth-role-section">
+              <p className="auth-role-title">Informations patient</p>
+              <div className="auth-field">
+                <label htmlFor="dateNaissance">Date de naissance</label>
+                <input
+                  id="dateNaissance"
+                  type="date"
+                  name="patientDetails.dateNaissance"
+                  value={formData.patientDetails.dateNaissance}
+                  onChange={handleChange}
+                  disabled={loading}
+                  className={fieldClass}
+                />
+              </div>
+              <div className="auth-field">
+                <label htmlFor="sexe">Sexe</label>
+                <select
+                  id="sexe"
+                  name="patientDetails.sexe"
+                  value={formData.patientDetails.sexe}
+                  onChange={handleChange}
+                  disabled={loading}
+                  className="auth-select"
+                >
+                  <option value="">Sexe</option>
+                  <option value="M">M</option>
+                  <option value="F">F</option>
+                </select>
+              </div>
+              <div className="auth-field">
+                <label htmlFor="contact">Contact</label>
+                <input
+                  id="contact"
+                  name="patientDetails.contact"
+                  placeholder="Contact"
+                  value={formData.patientDetails.contact}
+                  onChange={handleChange}
+                  disabled={loading}
+                  className={fieldClass}
+                />
+              </div>
+            </div>
           )}
 
-          {/* Champs pour Médecin */}
           {formData.role === "Medecin" && (
-            <>
-              <input
-                name="medecinDetails.specialite"
-                placeholder="Spécialité"
-                value={formData.medecinDetails.specialite}
-                onChange={handleChange}
-                required
-                disabled={loading}
-                style={inputStyle}
-              />
-              <input
-                name="medecinDetails.telephone"
-                placeholder="Téléphone"
-                value={formData.medecinDetails.telephone}
-                onChange={handleChange}
-                required
-                disabled={loading}
-                style={inputStyle}
-              />
-              <input
-                name="medecinDetails.adresseCabinet"
-                placeholder="Adresse du cabinet"
-                value={formData.medecinDetails.adresseCabinet}
-                onChange={handleChange}
-                required
-                disabled={loading}
-                style={inputStyle}
-              />
-            </>
+            <div className="auth-role-section">
+              <p className="auth-role-title">Informations médecin</p>
+              <div className="auth-field">
+                <input name="medecinDetails.specialite" placeholder="Spécialité" value={formData.medecinDetails.specialite} onChange={handleChange} required disabled={loading} className={fieldClass} />
+              </div>
+              <div className="auth-field">
+                <input name="medecinDetails.telephone" placeholder="Téléphone" value={formData.medecinDetails.telephone} onChange={handleChange} required disabled={loading} className={fieldClass} />
+              </div>
+              <div className="auth-field">
+                <input name="medecinDetails.adresseCabinet" placeholder="Adresse du cabinet" value={formData.medecinDetails.adresseCabinet} onChange={handleChange} required disabled={loading} className={fieldClass} />
+              </div>
+            </div>
           )}
 
-          {/* Champs pour Pharmacien */}
           {formData.role === "Pharmacien" && (
-            <>
-              <input
-                name="pharmacienDetails.nomPharmacie"
-                placeholder="Nom pharmacie"
-                value={formData.pharmacienDetails.nomPharmacie}
-                onChange={handleChange}
-                required
-                disabled={loading}
-                style={inputStyle}
-              />
-              <input
-                name="pharmacienDetails.adressePharmacie"
-                placeholder="Adresse pharmacie"
-                value={formData.pharmacienDetails.adressePharmacie}
-                onChange={handleChange}
-                required
-                disabled={loading}
-                style={inputStyle}
-              />
-            </>
+            <div className="auth-role-section">
+              <p className="auth-role-title">Informations pharmacien</p>
+              <div className="auth-field">
+                <input name="pharmacienDetails.nomPharmacie" placeholder="Nom pharmacie" value={formData.pharmacienDetails.nomPharmacie} onChange={handleChange} required disabled={loading} className={fieldClass} />
+              </div>
+              <div className="auth-field">
+                <input name="pharmacienDetails.adressePharmacie" placeholder="Adresse pharmacie" value={formData.pharmacienDetails.adressePharmacie} onChange={handleChange} required disabled={loading} className={fieldClass} />
+              </div>
+            </div>
           )}
 
-          {/* Champs pour Assistant */}
           {formData.role === "Assistant" && (
-            <>
-              <input
-                name="assistantDetails.poste"
-                placeholder="Poste"
-                value={formData.assistantDetails.poste}
-                onChange={handleChange}
-                required
-                disabled={loading}
-                style={inputStyle}
-              />
-              <input
-                name="assistantDetails.serviceId"
-                placeholder="Service ID (ObjectId de Service)"
-                value={formData.assistantDetails.serviceId}
-                onChange={handleChange}
-                required
-                disabled={loading}
-                style={inputStyle}
-              />
-            </>
+            <div className="auth-role-section">
+              <p className="auth-role-title">Informations assistant</p>
+              <div className="auth-field">
+                <input name="assistantDetails.poste" placeholder="Poste" value={formData.assistantDetails.poste} onChange={handleChange} required disabled={loading} className={fieldClass} />
+              </div>
+              <div className="auth-field">
+                <input name="assistantDetails.serviceId" placeholder="Service ID (ObjectId de Service)" value={formData.assistantDetails.serviceId} onChange={handleChange} required disabled={loading} className={fieldClass} />
+              </div>
+            </div>
           )}
 
-          {/* Champs pour Admin / SuperAdmin */}
           {(formData.role === "Admin" || formData.role === "SuperAdmin") && (
-            <>
-              <input
-                name="adminDetails.adminCode"
-                placeholder="Code admin"
-                value={formData.adminDetails.adminCode}
-                onChange={handleChange}
-                required
-                disabled={loading}
-                style={inputStyle}
-              />
-              <input
-                name="adminDetails.permissions"
-                placeholder="Permissions séparées par virgules"
-                value={formData.adminDetails.permissions}
-                onChange={handleChange}
-                disabled={loading}
-                style={inputStyle}
-              />
-            </>
+            <div className="auth-role-section">
+              <p className="auth-role-title">Informations administrateur</p>
+              <div className="auth-field">
+                <input name="adminDetails.adminCode" placeholder="Code admin" value={formData.adminDetails.adminCode} onChange={handleChange} required disabled={loading} className={fieldClass} />
+              </div>
+              <div className="auth-field">
+                <input name="adminDetails.permissions" placeholder="Permissions séparées par virgules" value={formData.adminDetails.permissions} onChange={handleChange} disabled={loading} className={fieldClass} />
+              </div>
+            </div>
           )}
 
-          {/* Champs pour Modérateur */}
           {formData.role === "Moderateur" && (
-            <input
-              name="moderatorDetails.moderatedSections"
-              placeholder="Sections modérées séparées par virgules"
-              value={formData.moderatorDetails.moderatedSections}
-              onChange={handleChange}
-              disabled={loading}
-              style={inputStyle}
-            />
+            <div className="auth-role-section">
+              <div className="auth-field">
+                <input name="moderatorDetails.moderatedSections" placeholder="Sections modérées séparées par virgules" value={formData.moderatorDetails.moderatedSections} onChange={handleChange} disabled={loading} className={fieldClass} />
+              </div>
+            </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              width: "100%",
-              padding: 15,
-              backgroundColor: loading ? "#ccc" : "#0b3c5d",
-              color: "white",
-              border: "none",
-              borderRadius: 8,
-              fontWeight: "bold",
-            }}
-          >
+          <button type="submit" disabled={loading} className="auth-btn">
+            <FiUserPlus aria-hidden="true" />
             {loading ? "Inscription..." : "S'inscrire"}
           </button>
         </form>
 
-        <div style={{ textAlign: "center", marginTop: 20 }}>
-          <Link to="/login" style={{ color: "#0b3c5d" }}>
-            Déjà inscrit ? Connexion
-          </Link>
+        <div className="auth-footer-link">
+          <Link to="/login">Déjà inscrit ? Connexion</Link>
         </div>
+        </motion.div>
       </div>
     </div>
   );

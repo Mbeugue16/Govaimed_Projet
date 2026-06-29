@@ -1,19 +1,27 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import './Styles/Global.css';
 import Navbar from './components/Navbar';
 import Footer from './components/footer';
 import Home from './components/Home';
 import Login from './auth/Login';
 import Register from './auth/Register';
-import ForgotPassword from './auth/ForgotPassword';
+import ForgotPassword from './auth/ForgotPassword'; 
 import ResetPassword from './auth/ResetPassword';
 import RendezVousMedecin from './pages/RendezVousMedecin';
 import AdminDashboard from './admin/AdminDashboard';
 import MedecinDashboard from './pages/MedecinDashboard';
+import MedecinProfile from './pages/MedecinProfile';
 import CreateDossier from './pages/CreateDossier';
 import MesDossiers from './pages/MesDossiers';
 import PatientDashboard from './pages/Composants/PatientDashboard';
+import DashboardHome from './pages/Composants/DashboardHome';
 import MyDossiers from './pages/Composants/MyDossiers';
+import PatientProfile from './pages/Composants/PatientProfile';
+import PatientMedecins from './pages/Composants/PatientMedecins';
+import PatientPrescriptions from './pages/Composants/PatientPrescriptions';
+import PatientNotifications from './pages/Composants/PatientNotifications';
+import PatientParametres from './pages/Composants/PatientParametres';
 import PrivateRoute from './auth/PrivateRoute';
 import PrendreRdv from './pages/PrendreRdv';
 import ServiceList from './services/ServiceList';
@@ -23,9 +31,9 @@ import ServicesRdv from './services/ServicesRdv';
 
 function App() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="app-layout">
       <Navbar />
-      <main className="flex-grow">
+      <main className="main-content">
         <Routes>
           {/* Pages publiques */}
           <Route path="/" element={<Home />} />
@@ -77,6 +85,14 @@ function App() {
               </PrivateRoute>
             }
           />
+          <Route
+            path="/medecin/profil"
+            element={
+              <PrivateRoute allowedRoles={['Medecin']}>
+                <MedecinProfile />
+              </PrivateRoute>
+            }
+          />
 
           {/* Pages Patient (protégé) */}
           <Route
@@ -87,9 +103,14 @@ function App() {
               </PrivateRoute>
             }
           >
-            <Route index element={""} />
+            <Route index element={<DashboardHome />} />
             <Route path="mes-dossiers" element={<MyDossiers />} />
             <Route path="nouveau-rdv" element={<PrendreRdv />} />
+            <Route path="mes-medecins" element={<PatientMedecins />} />
+            <Route path="prescriptions" element={<PatientPrescriptions />} />
+            <Route path="notifications" element={<PatientNotifications />} />
+            <Route path="profil" element={<PatientProfile />} />
+            <Route path="parametres" element={<PatientParametres />} />
           </Route>
 
           {/* Services (Admin) */}

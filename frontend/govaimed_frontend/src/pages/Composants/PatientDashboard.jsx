@@ -1,33 +1,25 @@
 import React from "react";
-import { Link, Outlet } from "react-router-dom";
-import "../../Styles/PatientDashboard.css"; // CHEMIN CORRIGÉ
+import { Outlet, useLocation, Link } from "react-router-dom";
+import { FiArrowLeft } from "react-icons/fi";
+import PageTransition from "../../components/ui/PageTransition";
+import "../../Styles/PatientApp.css";
 
 const PatientDashboard = () => {
+  const location = useLocation();
+  const isHome =
+    location.pathname === "/patient/dashboard" ||
+    location.pathname === "/patient/dashboard/";
+
   return (
-    <div className="PatientDashboard">
-      <h1>🩺 Tableau de bord patient</h1>
-      <p>Bienvenue dans votre espace personnel !</p>
-
-      {/* Cartes d'accès */}
-      <nav className="dashboard-cards">
-        <Link to="mes-dossiers" className="card">
-          <span className="icon">📂</span>
-          <strong>Mes Dossiers</strong>
-        </Link>
-
-        <Link to="nouveau-rdv" className="card">
-          <span className="icon">➕</span>
-          <strong>Prendre RDV</strong>
-        </Link>
-
-        <Link to="/logout" className="card logout">
-          <span className="icon">🚪</span>
-          <strong>Déconnexion</strong>
-        </Link>
-      </nav>
-
-      {/* Contenu dynamique des routes enfants */}
-      <div className="PatientDashboard-content">
+    <div className="patient-app">
+      <div className="patient-app-inner">
+        {!isHome && (
+          <PageTransition>
+            <Link to="/patient/dashboard" className="patient-back-link">
+              <FiArrowLeft aria-hidden="true" /> Retour au tableau de bord
+            </Link>
+          </PageTransition>
+        )}
         <Outlet />
       </div>
     </div>

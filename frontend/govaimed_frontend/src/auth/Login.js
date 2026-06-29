@@ -1,6 +1,11 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { postData, setAuthToken, decodeToken } from "../api/endpoint";
+import { motion } from "framer-motion";
+import { FiMail, FiLock, FiLogIn, FiAlertCircle } from "react-icons/fi";
+import { FaStethoscope, FaHospital, FaUserMd } from "react-icons/fa";
+import { postData, setAuthToken } from "../api/endpoint";
+import { persistUserSession } from "../utils/authSession";
+import "../Styles/Auth.css";
 
 const Login = () => {
   const [credentials, setCredentials] = useState({ email: "", password: "" });
@@ -19,15 +24,10 @@ const Login = () => {
     setError("");
 
     try {
-      const data = await postData("/auth/login", {
-        email: credentials.email.trim().toLowerCase(),
-        password: credentials.password,
-      });
+      const data = await postData("/auth/login", credentials);
 
       setAuthToken(data.token);
-
-      const decoded = decodeToken(data.token);
-      localStorage.setItem("user", JSON.stringify(decoded));
+      persistUserSession(data.token, data.user);
 
       const roleRoutes = {
         Patient: "/patient/dashboard",
@@ -42,147 +42,111 @@ const Login = () => {
         MediateurNumerique: "/service",
       };
 
-      navigate(roleRoutes[decoded.role] || "/", { replace: true });
-
+      navigate(roleRoutes[data.user?.role] || "/", { replace: true });
     } catch (err) {
-      setError(err.message || "Erreur de connexion, vérifiez vos identifiants");
+      setError(
+        err.response?.data?.message ||
+        "Erreur de connexion, vérifiez vos identifiants"
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <h2 style={styles.title}>Connexion</h2>
-
-        {error && <div style={styles.error}>{error}</div>}
-
-        <form onSubmit={handleSubmit}>
-          <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            value={credentials.email}
-            onChange={handleChange}
-            required
-            disabled={loading}
-            style={styles.input}
-          />
-
-          <input
-            type="password"
-            name="password"
-            placeholder="Mot de passe"
-            value={credentials.password}
-            onChange={handleChange}
-            required
-            disabled={loading}
-            style={styles.input}
-          />
-
-          {/* 🔥 Lien Mot de passe oublié */}
-          <div style={styles.forgotContainer}>
-            <Link to="/forgot-password" style={styles.forgotLink}>
-              Mot de passe oublié ?
-            </Link>
+    <div className="auth-page">
+      <motion.div
+        className="auth-illustration"
+        initial={{ opacity: 0, x: -30 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.6 }}
+      >
+        <div className="auth-illustration-content">
+          <div className="auth-illustration-icons">
+            <div className="auth-icon-circle"><FaStethoscope size={28} /></div>
+            <div className="auth-icon-circle"><FaHospital size={28} /></div>
+            <div className="auth-icon-circle"><FaUserMd size={28} /></div>
           </div>
+          <h2>Bienvenue sur GovAiMed</h2>
+          <p>
+            Accédez à votre espace sécurisé pour gérer vos dossiers médicaux,
+            rendez-vous et prescriptions en toute confiance.
+          </p>
+        </div>
+      </motion.div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              ...styles.button,
-              backgroundColor: loading ? "#ccc" : "#0b3c5d",
-              cursor: loading ? "not-allowed" : "pointer",
-            }}
-          >
-            {loading ? "Connexion en cours..." : "Se connecter"}
-          </button>
+      <div className="auth-form-side">
+        <motion.div
+          className="auth-card"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          <h1 className="auth-title">Connexion</h1>
+          <p className="auth-subtitle">Connectez-vous à votre compte GovAiMed</p>
 
-          <div style={styles.registerContainer}>
-            <Link to="/register" style={styles.registerLink}>
-              Pas de compte ? S'inscrire
-            </Link>
-          </div>
-        </form>
+          {error && (
+            <div className="auth-error" role="alert">
+              <FiAlertCircle /> {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit}>
+            <div className="auth-field">
+              <label htmlFor="email">Email</label>
+              <div className="auth-input-wrap">
+                <FiMail className="auth-input-icon" aria-hidden="true" />
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  placeholder="votre.email@exemple.com"
+                  value={credentials.email}
+                  onChange={handleChange}
+                  required
+                  disabled={loading}
+                  className="auth-input"
+                  autoComplete="email"
+                />
+              </div>
+            </div>
+
+            <div className="auth-field">
+              <label htmlFor="password">Mot de passe</label>
+              <div className="auth-input-wrap">
+                <FiLock className="auth-input-icon" aria-hidden="true" />
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  placeholder="Votre mot de passe"
+                  value={credentials.password}
+                  onChange={handleChange}
+                  required
+                  disabled={loading}
+                  className="auth-input"
+                  autoComplete="current-password"
+                />
+              </div>
+            </div>
+
+            <div className="auth-forgot">
+              <Link to="/forgot-password">Mot de passe oublié ?</Link>
+            </div>
+
+            <button type="submit" disabled={loading} className="auth-btn">
+              <FiLogIn aria-hidden="true" />
+              {loading ? "Connexion en cours..." : "Se connecter"}
+            </button>
+
+            <div className="auth-footer-link">
+              <Link to="/register">Pas de compte ? S&apos;inscrire</Link>
+            </div>
+          </form>
+        </motion.div>
       </div>
     </div>
   );
-};
-
-//STYLES 
-
-const styles = {
-  container: {
-    minHeight: "100vh",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#f5f5f5",
-    padding: "20px",
-  },
-  card: {
-    backgroundColor: "white",
-    padding: "40px",
-    borderRadius: "12px",
-    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-    width: "100%",
-    maxWidth: "400px",
-  },
-  title: {
-    textAlign: "center",
-    marginBottom: "30px",
-    color: "#0b3c5d",
-    fontSize: "28px",
-    fontWeight: "bold",
-  },
-  input: {
-    width: "100%",
-    padding: "15px",
-    border: "2px solid #ddd",
-    borderRadius: "8px",
-    fontSize: "16px",
-    marginBottom: "15px",
-    boxSizing: "border-box",
-  },
-  button: {
-    width: "100%",
-    padding: "15px",
-    color: "white",
-    border: "none",
-    borderRadius: "8px",
-    fontSize: "16px",
-    fontWeight: "bold",
-  },
-  forgotContainer: {
-    textAlign: "right",
-    marginBottom: "20px",
-  },
-  forgotLink: {
-    fontSize: "14px",
-    color: "#0b3c5d",
-    textDecoration: "none",
-    fontWeight: "500",
-  },
-  registerContainer: {
-    textAlign: "center",
-    marginTop: "20px",
-  },
-  registerLink: {
-    color: "#0b3c5d",
-    textDecoration: "none",
-    fontWeight: "500",
-  },
-  error: {
-    backgroundColor: "#fee",
-    color: "#c33",
-    padding: "12px",
-    borderRadius: "8px",
-    marginBottom: "20px",
-    border: "1px solid #fcc",
-    fontSize: "14px",
-  },
 };
 
 export default Login;

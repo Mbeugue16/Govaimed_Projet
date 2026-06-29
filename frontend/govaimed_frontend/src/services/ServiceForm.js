@@ -15,17 +15,19 @@ const ServiceForm = () => {
   });
 
   useEffect(() => {
-    if (id) fetchService();
-  }, [id]);
+    if (!id) return;
 
-  const fetchService = async () => {
-    try {
-      const data = await getData(`/services/${id}`);
-      setForm(data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+    const loadService = async () => {
+      try {
+        const data = await getData(`/services/${id}`);
+        setForm(data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    loadService();
+  }, [id]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

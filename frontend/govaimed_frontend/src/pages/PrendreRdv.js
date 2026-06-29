@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import axios from "axios";
+import PageTransition from "../components/ui/PageTransition";
+import "../Styles/PatientApp.css";
 import "../Styles/PrendreRdv.css";
 
 const API_URL = "http://localhost:5000/api";
@@ -20,12 +22,12 @@ const PrendreRdv = () => {
 
   const token = localStorage.getItem("token");
 
-  const axiosInstance = axios.create({
+  const axiosInstance = useMemo(() => axios.create({
     baseURL: API_URL,
     headers: {
       Authorization: `Bearer ${token}`
     }
-  });
+  }), [token]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -44,7 +46,7 @@ const PrendreRdv = () => {
     };
 
     fetchData();
-  }, []);
+  }, [axiosInstance]);
 
   const handleChange = (e) => {
     setForm({
@@ -92,10 +94,13 @@ const PrendreRdv = () => {
   };
 
   return (
-    <div className="rdv-container">
+    <PageTransition className="patient-page">
+      <div className="patient-page-header">
+        <h1>Prendre un rendez-vous</h1>
+        <p>Planifiez votre prochaine consultation</p>
+      </div>
 
       <div className="rdv-card">
-        <h2>📅 Prendre un rendez-vous</h2>
 
         {error && <p className="message error">{error}</p>}
         {message && <p className="message success">{message}</p>}
@@ -159,8 +164,7 @@ const PrendreRdv = () => {
 
         </form>
       </div>
-
-    </div>
+    </PageTransition>
   );
 };
 

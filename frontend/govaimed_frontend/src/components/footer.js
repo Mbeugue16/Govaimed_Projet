@@ -1,85 +1,174 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { FiMail, FiPhone, FiMapPin, FiFacebook, FiTwitter, FiLinkedin, FiInstagram } from 'react-icons/fi';
+import { motion } from 'framer-motion';
+import {
+  FiMail, FiPhone, FiMapPin, FiFacebook, FiTwitter,
+  FiLinkedin, FiInstagram, FiSend,
+} from 'react-icons/fi';
+import { useAuth } from '../context/AuthContext';
 import '../Styles/Footer.css';
+
+const dashboardPrefixes = [
+  '/patient/dashboard',
+  '/medecin',
+  '/admin',
+  '/services',
+  '/services-rdv',
+];
 
 const Footer = () => {
   const location = useLocation();
+  const { isAuthenticated } = useAuth();
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [logoError, setLogoError] = useState(false);
 
-  // Masquer le footer sur les pages admin
-  if (location.pathname.startsWith('/admin') || location.pathname.startsWith('/superadmin')) {
+  if (location.pathname.startsWith('/login') ||
+      location.pathname.startsWith('/register') ||
+      location.pathname.startsWith('/forgot-password') ||
+      location.pathname.startsWith('/reset-password')) {
     return null;
   }
 
+  if (isAuthenticated && dashboardPrefixes.some((p) => location.pathname.startsWith(p))) {
+    return null;
+  }
+
+  const handleNewsletter = (e) => {
+    e.preventDefault();
+    if (newsletterEmail) {
+      alert('Merci pour votre inscription à la newsletter !');
+      setNewsletterEmail('');
+    }
+  };
+
+  const scrollToSection = (sectionId) => {
+    if (location.pathname !== '/') {
+      window.location.href = `/#${sectionId}`;
+      return;
+    }
+    const el = document.getElementById(sectionId);
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
     <footer className="footer">
+      <div className="footer-wave" aria-hidden="true">
+        <svg viewBox="0 0 1440 60" preserveAspectRatio="none">
+          <path d="M0,30 C360,60 720,0 1080,30 C1260,45 1380,40 1440,30 L1440,60 L0,60 Z" fill="#114A70" />
+        </svg>
+      </div>
+
       <div className="footer-container">
         <div className="footer-content">
-          {/* Section logo et description */}
-          <div className="footer-section">
-            <h3 className="footer-logo">GovAimed Sanitaire</h3>
+          <motion.div
+            className="footer-section footer-brand"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <Link to="/" className="footer-logo-link">
+              {!logoError ? (
+                <img
+                  src="/govameid.jpeg"
+                  alt="GovAiMed"
+                  className="footer-logo-img"
+                  onError={() => setLogoError(true)}
+                  loading="lazy"
+                />
+              ) : (
+                <span className="footer-logo-text">GovAiMed</span>
+              )}
+            </Link>
             <p className="footer-description">
-              Votre partenaire de confiance pour la gestion sanitaire moderne et sécurisée.
+              Votre partenaire de confiance pour la gestion sanitaire moderne,
+              sécurisée et adaptée au contexte africain.
             </p>
             <div className="social-links">
-              <a href="#" aria-label="Facebook" className="social-link"><FiFacebook size={20} /></a>
-              <a href="#" aria-label="Twitter" className="social-link"><FiTwitter size={20} /></a>
-              <a href="#" aria-label="LinkedIn" className="social-link"><FiLinkedin size={20} /></a>
-              <a href="#" aria-label="Instagram" className="social-link"><FiInstagram size={20} /></a>
+              {[
+                { Icon: FiFacebook, label: 'Facebook', href: 'https://facebook.com' },
+                { Icon: FiTwitter, label: 'Twitter', href: 'https://twitter.com' },
+                { Icon: FiLinkedin, label: 'LinkedIn', href: 'https://linkedin.com' },
+                { Icon: FiInstagram, label: 'Instagram', href: 'https://instagram.com' },
+              ].map(({ Icon, label, href }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={label}
+                  className="social-link"
+                >
+                  <Icon size={18} />
+                </a>
+              ))}
             </div>
-          </div>
+          </motion.div>
 
-          {/* Liens rapides */}
           <div className="footer-section">
             <h4>Liens rapides</h4>
             <ul className="footer-links">
               <li><Link to="/">Accueil</Link></li>
-              <li><a href="#services">Fonctionnalités</a></li>
-              <li><a href="#about">Sécurité</a></li>
-              <li><a href="#contact">Contact</a></li>
+              <li><button type="button" onClick={() => scrollToSection('services')}>Fonctionnalités</button></li>
+              <li><button type="button" onClick={() => scrollToSection('about')}>Sécurité</button></li>
+              <li><button type="button" onClick={() => scrollToSection('contact')}>Contact</button></li>
             </ul>
           </div>
 
-          {/* Services */}
           <div className="footer-section">
             <h4>Services</h4>
             <ul className="footer-links">
               <li><Link to="/register">Créer un compte</Link></li>
               <li><Link to="/login">Se connecter</Link></li>
-              <li><a href="#services">Gestion des patients</a></li>
-              <li><a href="#services">Rendez-vous</a></li>
+              <li><button type="button" onClick={() => scrollToSection('services')}>Gestion des dossiers</button></li>
+              <li><button type="button" onClick={() => scrollToSection('services')}>Rendez-vous</button></li>
             </ul>
           </div>
 
-          {/* Contact */}
           <div className="footer-section">
             <h4>Contact</h4>
             <ul className="footer-contact">
               <li>
-                <FiMail size={18} className="contact-icon" />
+                <FiMail size={18} className="contact-icon" aria-hidden="true" />
                 <span>contact@govaimed-sanitaire.com</span>
               </li>
               <li>
-                <FiPhone size={18} className="contact-icon" />
-                <span>+33 842 57 65</span>
+                <FiPhone size={18} className="contact-icon" aria-hidden="true" />
+                <span>+221 33 842 57 65</span>
               </li>
               <li>
-                <FiMapPin size={18} className="contact-icon" />
-                <span>Principal <br />221 Dakar,Senegal</span>
+                <FiMapPin size={18} className="contact-icon" aria-hidden="true" />
+                <span>Dakar, Sénégal</span>
               </li>
             </ul>
+
+            <form className="newsletter-form" onSubmit={handleNewsletter}>
+              <label htmlFor="newsletter-email">Newsletter</label>
+              <div className="newsletter-input-group">
+                <input
+                  id="newsletter-email"
+                  type="email"
+                  placeholder="Votre email"
+                  value={newsletterEmail}
+                  onChange={(e) => setNewsletterEmail(e.target.value)}
+                  required
+                  aria-label="Adresse email pour la newsletter"
+                />
+                <button type="submit" aria-label="S'inscrire à la newsletter">
+                  <FiSend size={16} />
+                </button>
+              </div>
+            </form>
           </div>
         </div>
 
-        {/* Bas du footer */}
         <div className="footer-bottom">
-          <p>&copy; 2024 GovAimed Sanitaire. Tous droits réservés.</p>
+          <p>&copy; {new Date().getFullYear()} GovAiMed Sanitaire. Tous droits réservés.</p>
           <div className="footer-legal">
-            <a href="#">Politique de confidentialité</a>
-            <span>|</span>
-            <a href="#">Conditions d'utilisation</a>
-            <span>|</span>
-            <a href="#">Mentions légales</a>
+            <button type="button">Politique de confidentialité</button>
+            <span aria-hidden="true">|</span>
+            <button type="button">Conditions d&apos;utilisation</button>
+            <span aria-hidden="true">|</span>
+            <button type="button">Mentions légales</button>
           </div>
         </div>
       </div>

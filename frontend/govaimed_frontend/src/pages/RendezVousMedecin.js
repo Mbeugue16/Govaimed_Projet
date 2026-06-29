@@ -75,8 +75,8 @@ const RendezVousMedecin = () => {
           <div key={rdv._id} className="rdv-card">
             <p><strong>Patient :</strong> {rdv.patientId?.fullName}</p>
             <p><strong>Date :</strong> {new Date(rdv.dateRendezVous).toLocaleString()}</p>
-            <button onClick={() => handleAccept(rdv._id)}>✅ Accepter</button>
-            <button onClick={() => handleRefuse(rdv._id)}>❌ Refuser</button>
+            <button type="button" onClick={() => handleAccept(rdv._id)} disabled={loading}>✅ Accepter</button>
+            <button type="button" onClick={() => handleRefuse(rdv._id)} disabled={loading}>❌ Refuser</button>
           </div>
         ))
       )}
